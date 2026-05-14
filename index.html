@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SiInventaris - Sistem Inventaris Modern</title>
+
+    <!-- Tailwind -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine JS -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <style>
+        [x-cloak] {
+            display: none !important;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .bg-gradient-blue {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2563eb;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-gray-100"
+    x-data="inventoryApp()"
+    x-init="initData()"
+>
+
+    <!-- LOGIN -->
+    <div
+        x-show="!isLoggedIn"
+        class="min-h-screen bg-gradient-blue flex items-center justify-center p-4"
+    >
+        <div class="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md">
+
+            <div class="text-center mb-8">
+                <div class="text-6xl mb-4">📦</div>
+
+                <h1 class="text-4xl font-black text-blue-700">
+                    SIINVENTARIS
+                </h1>
+
+                <p class="text-gray-500 mt-2">
+                    Sistem Inventaris Modern
+                </p>
+            </div>
+
+            <form @submit.prevent="login">
+
+                <div class="mb-5">
+                    <input
+                        type="email"
+                        x-model="loginEmail"
+                        placeholder="admin@gmail.com"
+                        class="w-full p-4 rounded-xl border border-blue-200 bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-300"
+                        required
+                    >
+                </div>
+
+                <div class="mb-6">
+                    <input
+                        type="password"
+                        x-model="loginPass"
+                        placeholder="12345"
+                        class="w-full p-4 rounded-xl border border-blue-200 bg-blue-50 focus:outline-none focus:ring-4 focus:ring-blue-300"
+                        required
+                    >
+                </div>
+
+                <button
+                    type="submit"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition"
+                >
+                    LOGIN
+                </button>
+
+            </form>
+
+        </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div x-show="isLoggedIn" x-cloak>
+
+        <!-- NAVBAR -->
+        <nav class="bg-blue-700 text-white px-8 py-4 flex justify-between items-center shadow-lg">
+
+            <div class="flex items-center gap-3">
+                <div class="text-3xl">📦</div>
+
+                <div>
+                    <h1 class="font-black text-2xl">
+                        SiInventaris
+                    </h1>
+
+                    <p class="text-xs uppercase text-blue-200">
+                        Dashboard Inventaris
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex gap-5 items-center">
+
+                <button
+                    @click="currentPage='dashboard'"
+                    :class="currentPage==='dashboard' ? 'bg-white text-blue-700' : 'bg-blue-600'"
+                    class="px-5 py-2 rounded-xl font-bold"
+                >
+                    Dashboard
+                </button>
+
+                <button
+                    @click="currentPage='masuk'"
+                    :class="currentPage==='masuk' ? 'bg-white text-blue-700' : 'bg-blue-600'"
+                    class="px-5 py-2 rounded-xl font-bold"
+                >
+                    Barang Masuk
+                </button>
+
+                <button
+                    @click="currentPage='keluar'"
+                    :class="currentPage==='keluar' ? 'bg-white text-blue-700' : 'bg-blue-600'"
+                    class="px-5 py-2 rounded-xl font-bold"
+                >
+                    Barang Keluar
+                </button>
+
+                <button
+                    @click="backupData"
+                    class="bg-emerald-500 hover:bg-emerald-600 px-5 py-2 rounded-xl font-bold"
+                >
+                    Backup JSON
+                </button>
+
+                <button
+                    @click="resetData"
+                    class="bg-yellow-500 hover:bg-yellow-600 px-5 py-2 rounded-xl font-bold"
+                >
+                    Reset Data
+                </button>
+
+                <button
+                    @click="logout"
+                    class="bg-red-500 hover:bg-red-600 px-5 py-2 rounded-xl font-bold"
+                >
+                    Logout
+                </button>
+
+            </div>
+
+        </nav>
+
+        <div class="max-w-7xl mx-auto p-8">
+
+            <!-- DASHBOARD -->
+            <div x-show="currentPage==='dashboard'">
+
+                <h2 class="text-4xl font-black mb-8">
+                    Dashboard Inventaris
+                </h2>
+
+                <!-- CARD -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border-l-8 border-blue-600">
+                        <p class="text-gray-500 font-bold">
+                            Total Produk
+                        </p>
+
+                        <h2
+                            class="text-5xl font-black mt-4"
+                            x-text="items.length"
+                        ></h2>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border-l-8 border-emerald-500">
+                        <p class="text-gray-500 font-bold">
+                            Total Stock
+                        </p>
+
+                        <h2
+                            class="text-5xl font-black mt-4"
+                            x-text="items.reduce((a,b)=>a + parseInt(b.stock),0)"
+                        ></h2>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-6 shadow-lg border-l-8 border-red-500">
+                        <p class="text-gray-500 font-bold">
+                            Stock Menipis
+                        </p>
+
+                        <h2
+                            class="text-5xl font-black mt-4"
+                            x-text="items.filter(i => i.stock < 5).length"
+                        ></h2>
+                    </div>
+
+                </div>
+
+                <!-- FORM -->
+                <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+
+                    <h3 class="text-2xl font-black mb-6">
+                        Tambah Barang
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+
+                        <input
+                            type="text"
+                            x-model="newItem.name"
+                            placeholder="Nama Barang"
+                            class="border p-4 rounded-xl"
+                        >
+
+                        <input
+                            type="text"
+                            x-model="newItem.category"
+                            placeholder="Kategori"
+                            class="border p-4 rounded-xl"
+                        >
+
+                        <input
+                            type="number"
+                            x-model="newItem.stock"
+                            placeholder="Stock"
+                            class="border p-4 rounded-xl"
+                        >
+
+                        <button
+                            @click="addItem"
+                            class="bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold"
+                        >
+                            Tambah
+                        </button>
+
+                    </div>
+
+                </div>
+
+                <!-- SEARCH -->
+                <div class="bg-white p-5 rounded-2xl shadow-lg mb-5">
+
+                    <input
+                        type="text"
+                        x-model="searchQuery"
+                        placeholder="Cari barang atau kategori..."
+                        class="w-full md:w-96 border p-4 rounded-xl"
+                    >
+
+                </div>
+
+                <!-- TABLE -->
+                <div class="bg-white rounded-2xl shadow-lg overflow-auto">
+
+                    <table class="w-full min-w-[1000px]">
+
+                        <thead class="bg-blue-700 text-white">
+
+                            <tr class="text-center">
+                                <th class="p-4">Nama</th>
+                                <th class="p-4">Kategori</th>
+                                <th class="p-4">Stock</th>
+                                <th class="p-4">Qty</th>
+                                <th class="p-4">Aksi</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <template
+                                x-for="(item,index) in filteredItems"
+                                :key="index"
+                            >
+
+                                <tr class="border-b text-center hover:bg-gray-50">
+
+                                    <td class="p-4" x-text="item.name"></td>
+
+                                    <td class="p-4" x-text="item.category"></td>
+
+                                    <td class="p-4 font-bold" x-text="item.stock"></td>
+
+                                    <td class="p-4">
+                                        <input
+                                            type="number"
+                                            x-model="item.tempQty"
+                                            placeholder="Qty"
+                                            class="border p-2 rounded-lg w-24 text-center"
+                                        >
+                                    </td>
+
+                                    <td class="p-4 space-x-2">
+
+                                        <button
+                                            @click="updateStock(index,'in')"
+                                            class="bg-emerald-500 text-white px-3 py-2 rounded-lg"
+                                        >
+                                            Masuk
+                                        </button>
+
+                                        <button
+                                            @click="updateStock(index,'out')"
+                                            class="bg-orange-500 text-white px-3 py-2 rounded-lg"
+                                        >
+                                            Keluar
+                                        </button>
+
+                                        <button
+                                            @click="editItem(index)"
+                                            class="bg-blue-500 text-white px-3 py-2 rounded-lg"
+                                        >
+                                            Edit
+                                        </button>
+
+                                        <button
+                                            @click="deleteItem(index)"
+                                            class="bg-red-500 text-white px-3 py-2 rounded-lg"
+                                        >
+                                            Hapus
+                                        </button>
+
+                                    </td>
+
+                                </tr>
+
+                            </template>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <!-- BARANG MASUK -->
+            <div x-show="currentPage==='masuk'">
+
+                <h2 class="text-4xl font-black mb-8">
+                    📥 Riwayat Barang Masuk
+                </h2>
+
+                <div class="bg-white rounded-2xl shadow-lg overflow-auto">
+
+                    <table class="w-full">
+
+                        <thead class="bg-emerald-500 text-white">
+
+                            <tr class="text-center">
+                                <th class="p-4">No</th>
+                                <th class="p-4">Nama Barang</th>
+                                <th class="p-4">Jumlah</th>
+                                <th class="p-4">Tanggal</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <template x-for="(log,idx) in historyIn">
+
+                                <tr class="border-b text-center">
+
+                                    <td class="p-4" x-text="idx + 1"></td>
+
+                                    <td class="p-4" x-text="log.name"></td>
+
+                                    <td class="p-4" x-text="log.qty"></td>
+
+                                    <td class="p-4" x-text="log.date"></td>
+
+                                </tr>
+
+                            </template>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+            <!-- BARANG KELUAR -->
+            <div x-show="currentPage==='keluar'">
+
+                <h2 class="text-4xl font-black mb-8">
+                    📤 Riwayat Barang Keluar
+                </h2>
+
+                <div class="bg-white rounded-2xl shadow-lg overflow-auto">
+
+                    <table class="w-full">
+
+                        <thead class="bg-red-500 text-white">
+
+                            <tr class="text-center">
+                                <th class="p-4">No</th>
+                                <th class="p-4">Nama Barang</th>
+                                <th class="p-4">Jumlah</th>
+                                <th class="p-4">Tanggal</th>
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            <template x-for="(log,idx) in historyOut">
+
+                                <tr class="border-b text-center">
+
+                                    <td class="p-4" x-text="idx + 1"></td>
+
+                                    <td class="p-4" x-text="log.name"></td>
+
+                                    <td class="p-4" x-text="log.qty"></td>
+
+                                    <td class="p-4" x-text="log.date"></td>
+
+                                </tr>
+
+                            </template>
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        function inventoryApp() {
+            return {
+
+                isLoggedIn: false,
+
+                loginEmail: '',
+                loginPass: '',
+
+                currentPage: 'dashboard',
+
+                searchQuery: '',
+
+                newItem: {
+                    name: '',
+                    category: '',
+                    stock: 0
+                },
+
+                items: [],
+                historyIn: [],
+                historyOut: [],
+
+                initData() {
+
+                    const savedItems =
+                        localStorage.getItem('si_items');
+
+                    const savedIn =
+                        localStorage.getItem('si_history_in');
+
+                    const savedOut =
+                        localStorage.getItem('si_history_out');
+
+                    if (savedItems) {
+                        this.items = JSON.parse(savedItems);
+                    }
+
+                    if (savedIn) {
+                        this.historyIn = JSON.parse(savedIn);
+                    }
+
+                    if (savedOut) {
+                        this.historyOut = JSON.parse(savedOut);
+                    }
+                },
+
+                login() {
+
+                    if (
+                        this.loginEmail === 'admin@gmail.com' &&
+                        this.loginPass === '12345'
+                    ) {
+
+                        this.isLoggedIn = true;
+
+                    } else {
+
+                        alert('Email atau Password salah!');
+
+                    }
+                },
+
+                logout() {
+
+                    this.isLoggedIn = false;
+
+                    this.loginEmail = '';
+
+                    this.loginPass = '';
+
+                    this.currentPage = 'dashboard';
+                },
+
+                addItem() {
+
+                    if (
+                        !this.newItem.name ||
+                        !this.newItem.category
+                    ) {
+
+                        return alert('Lengkapi data barang!');
+                    }
+
+                    this.items.push({
+                        ...this.newItem,
+                        tempQty: ''
+                    });
+
+                    this.newItem = {
+                        name: '',
+                        category: '',
+                        stock: 0
+                    };
+
+                    this.save();
+                },
+
+                editItem(index) {
+
+                    let item = this.items[index];
+
+                    let newName =
+                        prompt(
+                            'Edit Nama Barang',
+                            item.name
+                        );
+
+                    if (newName) {
+
+                        item.name = newName;
+
+                        item.category =
+                            prompt(
+                                'Edit Kategori',
+                                item.category
+                            ) || item.category;
+
+                        this.save();
+                    }
+                },
+
+                deleteItem(index) {
+
+                    if (
+                        confirm('Hapus barang ini?')
+                    ) {
+
+                        this.items.splice(index, 1);
+
+                        this.save();
+                    }
+                },
+
+                updateStock(index, type) {
+
+                    let item = this.items[index];
+
+                    let qty =
+                        parseInt(item.tempQty);
+
+                    if (
+                        !qty ||
+                        qty <= 0
+                    ) {
+
+                        return alert(
+                            'Masukkan qty!'
+                        );
+                    }
+
+                    let now = new Date();
+
+                    let date =
+                        now.toLocaleDateString('id-ID') +
+                        ' ' +
+                        now.toLocaleTimeString('id-ID');
+
+                    if (type === 'in') {
+
+                        item.stock =
+                            parseInt(item.stock) + qty;
+
+                        this.historyIn.unshift({
+                            name: item.name,
+                            qty: qty,
+                            date: date
+                        });
+
+                    } else {
+
+                        if (
+                            item.stock < qty
+                        ) {
+
+                            return alert(
+                                'Stock tidak cukup!'
+                            );
+                        }
+
+                        item.stock =
+                            parseInt(item.stock) - qty;
+
+                        this.historyOut.unshift({
+                            name: item.name,
+                            qty: qty,
+                            date: date
+                        });
+                    }
+
+                    item.tempQty = '';
+
+                    this.save();
+                },
+
+                resetData() {
+
+                    if (
+                        confirm(
+                            'Reset semua data?'
+                        )
+                    ) {
+
+                        this.items = [];
+                        this.historyIn = [];
+                        this.historyOut = [];
+
+                        this.save();
+                    }
+                },
+
+                backupData() {
+
+                    const data = {
+
+                        items: this.items,
+
+                        barangMasuk: this.historyIn,
+
+                        barangKeluar: this.historyOut
+                    };
+
+                    const blob =
+                        new Blob(
+                            [JSON.stringify(data, null, 2)],
+                            {
+                                type: 'application/json'
+                            }
+                        );
+
+                    const url =
+                        URL.createObjectURL(blob);
+
+                    const a =
+                        document.createElement('a');
+
+                    a.href = url;
+
+                    a.download =
+                        'backup-siinventaris.json';
+
+                    a.click();
+
+                    URL.revokeObjectURL(url);
+                },
+
+                save() {
+
+                    localStorage.setItem(
+                        'si_items',
+                        JSON.stringify(this.items)
+                    );
+
+                    localStorage.setItem(
+                        'si_history_in',
+                        JSON.stringify(this.historyIn)
+                    );
+
+                    localStorage.setItem(
+                        'si_history_out',
+                        JSON.stringify(this.historyOut)
+                    );
+                },
+
+                get filteredItems() {
+
+                    return this.items.filter(i =>
+
+                        i.name
+                        .toLowerCase()
+                        .includes(
+                            this.searchQuery.toLowerCase()
+                        )
+
+                        ||
+
+                        i.category
+                        .toLowerCase()
+                        .includes(
+                            this.searchQuery.toLowerCase()
+                        )
+
+                    );
+                }
+
+            }
+        }
+    </script>
+
+</body>
+</html>
